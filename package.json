@@ -1,0 +1,7 @@
+{
+  "name": "whattoeat-api",
+  "private": true,
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}

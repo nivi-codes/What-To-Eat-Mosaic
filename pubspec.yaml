@@ -1,0 +1,26 @@
+name: what_to_eat
+description: Food decision app for urban Indians — decide what to eat in 60 seconds.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  go_router: ^14.0.0
+  provider: ^6.1.0
+  http: ^1.2.0
+  figma_squircle: ^0.6.3
+  google_fonts: ^6.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
