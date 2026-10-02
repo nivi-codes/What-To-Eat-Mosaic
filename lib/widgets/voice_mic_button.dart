@@ -5,6 +5,7 @@ enum MicPhase { idle, connecting, listening }
 
 /// Mic button with an explicit "getting ready" phase, so users don't start
 /// talking before the speech stream is connected and lose their first words.
+/// Moodboard style: cobalt mic inside double cobalt rings.
 class VoiceMicButton extends StatefulWidget {
   final MicPhase phase;
   final VoidCallback onTap;
@@ -80,40 +81,37 @@ class _VoiceMicButtonState extends State<VoiceMicButton> with TickerProviderStat
           child: AnimatedBuilder(
             animation: Listenable.merge([_pulse, _pop]),
             builder: (_, __) {
-              final pulseScale = listening ? 0.9 + 0.1 * Curves.easeInOut.transform(_pulse.value) : 1.0;
-              final popScale = 1.0 + 0.18 * Curves.easeOut.transform(1 - _pop.value) * (_pop.isAnimating ? 1 : 0);
+              final wave = listening ? Curves.easeInOut.transform(_pulse.value) : 0.0;
+              final popScale = 1.0 + 0.15 * Curves.easeOut.transform(1 - _pop.value) * (_pop.isAnimating ? 1 : 0);
               return Transform.scale(
-                scale: pulseScale * popScale,
+                scale: popScale,
                 child: SizedBox(
-                  width: 84,
-                  height: 84,
+                  width: 112,
+                  height: 112,
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
+                      // Double rings; they breathe outward while listening.
+                      _Ring(size: 104 + 8 * wave, opacity: connecting ? 0.25 : 1),
+                      _Ring(size: 90 + 4 * wave, opacity: connecting ? 0.25 : 1),
                       if (connecting)
                         const SizedBox(
-                          width: 84,
-                          height: 84,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 3,
-                            color: AppColors.primary,
-                          ),
+                          width: 90,
+                          height: 90,
+                          child: CircularProgressIndicator(strokeWidth: 3, color: AppColors.cobalt),
                         ),
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
-                        width: 72,
-                        height: 72,
+                        width: 76,
+                        height: 76,
                         decoration: BoxDecoration(
-                          color: listening ? AppColors.primary : AppColors.primaryLight,
+                          color: connecting ? const Color(0xFFDCE2FF) : AppColors.cobalt,
                           shape: BoxShape.circle,
-                          boxShadow: listening
-                              ? [BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 20, spreadRadius: 4)]
-                              : const [],
                         ),
                         child: Icon(
-                          listening ? Icons.stop : connecting ? Icons.hourglass_top : Icons.mic,
-                          color: listening ? Colors.white : AppColors.primary.withOpacity(connecting ? 0.6 : 1),
-                          size: 28,
+                          listening ? Icons.stop_rounded : connecting ? Icons.hourglass_top : Icons.mic,
+                          color: connecting ? AppColors.cobalt : Colors.white,
+                          size: 34,
                         ),
                       ),
                     ],
@@ -123,20 +121,36 @@ class _VoiceMicButtonState extends State<VoiceMicButton> with TickerProviderStat
             },
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           child: Text(
             label,
             key: ValueKey(phase),
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: listening ? AppColors.primary : AppColors.textMuted,
-              fontWeight: listening ? FontWeight.w600 : FontWeight.normal,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: listening ? AppColors.cobalt : AppColors.textMuted,
+                  fontWeight: listening ? FontWeight.w800 : FontWeight.w500,
+                ),
           ),
         ),
       ],
     );
   }
+}
+
+class _Ring extends StatelessWidget {
+  const _Ring({required this.size, required this.opacity});
+  final double size;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.cobalt.withOpacity(opacity), width: 2),
+        ),
+      );
 }

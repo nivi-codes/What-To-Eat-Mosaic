@@ -9,6 +9,7 @@ import '../providers/meal_log_provider.dart';
 import '../providers/saved_provider.dart';
 import '../providers/eat_flow_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../widgets/doodles.dart';
 
 class RecipeViewScreen extends StatefulWidget {
   const RecipeViewScreen({
@@ -58,14 +59,7 @@ class _RecipeViewScreenState extends State<RecipeViewScreen> {
         if (snap.connectionState != ConnectionState.done) {
           return _StatusScaffold(
             title: title,
-            child: const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: AppColors.primary),
-                SizedBox(height: 16),
-                Text('Writing your recipe…', style: TextStyle(color: AppColors.textMuted)),
-              ],
-            ),
+            child: const DoodleLoader(title: 'Writing your recipe…', subtitle: 'Built around what you have'),
           );
         }
         final recipe = snap.data;

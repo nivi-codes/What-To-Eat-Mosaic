@@ -9,6 +9,7 @@ import '../services/nudge_service.dart';
 import '../services/intent_service.dart';
 import '../widgets/understanding_indicator.dart';
 import '../widgets/voice_mic_button.dart';
+import '../widgets/doodles.dart';
 
 class EatFlowScreen extends StatelessWidget {
   const EatFlowScreen({super.key});
@@ -58,9 +59,9 @@ class EatFlowScreen extends StatelessWidget {
               preferredSize: const Size.fromHeight(3),
               child: LinearProgressIndicator(
                 value: _stepProgress(flow),
-                backgroundColor: AppColors.cardBorder,
-                color: AppColors.primary,
-                minHeight: 3,
+                backgroundColor: AppColors.divider,
+                color: AppColors.chilli,
+                minHeight: 4,
               ),
             ),
           ),
@@ -1105,27 +1106,9 @@ class _LoadingStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 56,
-            height: 56,
-            child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 3),
-          ),
-          SizedBox(height: 24),
-          Text(
-            'Finding your perfect meal...',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textDark),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 8),
-          Text(
-            'This takes just a moment',
-            style: TextStyle(color: AppColors.textMuted),
-            textAlign: TextAlign.center,
-          ),
-        ],
+      child: DoodleLoader(
+        title: 'Finding your picks…',
+        subtitle: 'Matching your mood, your diet and what you have',
       ),
     );
   }
@@ -1143,23 +1126,21 @@ class _BigTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.cardBorder),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.ink, width: 2),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: AppColors.primary, size: 24),
+            Icon(icon, color: AppColors.ink, size: 26),
             const SizedBox(height: 6),
             Text(
               label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
           ],
@@ -1179,16 +1160,13 @@ class _SelectableTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(18),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primaryLight : AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.cardBorder,
-            width: selected ? 2 : 1,
-          ),
+          color: selected ? AppColors.lime : AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.ink, width: selected ? 2.5 : 2),
         ),
         child: Center(
           child: Row(
@@ -1196,14 +1174,14 @@ class _SelectableTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (selected) ...[
-                const Icon(Icons.check_circle, color: AppColors.primary, size: 18),
+                const Icon(Icons.check_circle, color: AppColors.ink, size: 18),
                 const SizedBox(width: 6),
               ],
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  color: selected ? AppColors.primary : AppColors.textDark,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  color: AppColors.ink,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1226,14 +1204,14 @@ class _HintChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.ink, width: 1.5),
       ),
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: AppColors.textMuted,
-          fontSize: 11,
-          fontStyle: FontStyle.italic,
+          color: AppColors.ink,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

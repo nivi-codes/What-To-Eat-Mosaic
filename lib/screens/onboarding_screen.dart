@@ -9,6 +9,7 @@ import '../services/intent_service.dart';
 import '../services/nudge_service.dart';
 import '../widgets/understanding_indicator.dart';
 import '../widgets/voice_mic_button.dart';
+import '../widgets/doodles.dart';
 
 /// Unified onboarding — voice-first with keyboard toggle.
 /// Uses Gnani WebSocket streaming for real-time transcription
@@ -436,7 +437,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       });
       return const Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: Center(child: DoodleLoader(title: 'Saving your taste profile…')),
       );
     }
     return _buildGuidedStep(context);
@@ -657,9 +658,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           preferredSize: const Size.fromHeight(3),
           child: LinearProgressIndicator(
             value: progress,
-            backgroundColor: AppColors.cardBorder,
-            color: AppColors.primary,
-            minHeight: 3,
+            backgroundColor: AppColors.divider,
+            color: AppColors.chilli,
+            minHeight: 4,
           ),
         ),
       ),
@@ -918,11 +919,11 @@ class _OptionTile extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primaryLight : AppColors.surface,
+          color: selected ? AppColors.lime : AppColors.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? AppColors.primary : AppColors.cardBorder,
-            width: selected ? 2 : 1,
+            color: AppColors.ink,
+            width: selected ? 2.5 : 2,
           ),
         ),
         child: Center(
@@ -940,8 +941,8 @@ class _OptionTile extends StatelessWidget {
                   child: Text(
                     label,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                      color: selected ? AppColors.primary : AppColors.textDark,
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                      color: AppColors.ink,
                     ),
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,

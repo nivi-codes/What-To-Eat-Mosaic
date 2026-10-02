@@ -1,11 +1,11 @@
 {
-    "name": "what_to_eat",
-    "short_name": "what_to_eat",
+    "name": "WhatToEat",
+    "short_name": "WhatToEat",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FBF4E6",
+    "theme_color": "#10372B",
+    "description": "Decide what to eat in 60 seconds.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

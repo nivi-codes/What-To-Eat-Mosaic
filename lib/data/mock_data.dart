@@ -965,14 +965,14 @@ class MockData {
   // ─── Home Page Categories (Zomato-style) ──────────────────────────────────
 
   static const List<Map<String, dynamic>> quickCategories = [
-    {'icon': '🍳', 'label': 'Breakfast', 'tag': 'breakfast'},
-    {'icon': '🍛', 'label': 'Lunch', 'tag': 'lunch'},
-    {'icon': '🍿', 'label': 'Snacks', 'tag': 'snack'},
-    {'icon': '🌙', 'label': 'Dinner', 'tag': 'dinner'},
-    {'icon': '🥗', 'label': 'Healthy', 'tag': 'healthy'},
-    {'icon': '⚡', 'label': 'Quick', 'tag': 'quick'},
-    {'icon': '🌶️', 'label': 'Spicy', 'tag': 'spicy'},
-    {'icon': '🧁', 'label': 'Sweet', 'tag': 'sweet'},
+    {'icon': '🍳', 'label': 'Breakfast', 'doodle': 'idli', 'tag': 'breakfast'},
+    {'icon': '🍛', 'label': 'Lunch', 'doodle': 'dal', 'tag': 'lunch'},
+    {'icon': '🍿', 'label': 'Snacks', 'doodle': 'samosa', 'tag': 'snack'},
+    {'icon': '🌙', 'label': 'Dinner', 'doodle': 'biryani', 'tag': 'dinner'},
+    {'icon': '🥗', 'label': 'Healthy', 'doodle': 'avocado', 'tag': 'healthy'},
+    {'icon': '⚡', 'label': 'Quick', 'doodle': 'momo', 'tag': 'quick'},
+    {'icon': '🌶️', 'label': 'Spicy', 'doodle': 'chilli', 'tag': 'spicy'},
+    {'icon': '🧁', 'label': 'Sweet', 'doodle': 'jalebi', 'tag': 'sweet'},
   ];
 
   static const List<Map<String, dynamic>> featuredRestaurants = [

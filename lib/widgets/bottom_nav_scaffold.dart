@@ -24,7 +24,7 @@ class BottomNavScaffold extends StatelessWidget {
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.cardBorder)),
+          border: Border(top: BorderSide(color: AppColors.ink, width: 2)),
         ),
         child: SafeArea(
           top: false,
@@ -40,18 +40,27 @@ class BottomNavScaffold extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          selected ? tab.activeIcon : tab.icon,
-                          color: selected ? AppColors.primary : AppColors.textMuted,
-                          size: 22,
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: selected ? AppColors.lime : Colors.transparent,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: selected ? AppColors.ink : Colors.transparent, width: 1.5),
+                          ),
+                          child: Icon(
+                            selected ? tab.activeIcon : tab.icon,
+                            color: selected ? AppColors.ink : AppColors.textMuted,
+                            size: 22,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           tab.label,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                            color: selected ? AppColors.primary : AppColors.textMuted,
+                          style: AppTheme.font(
+                            size: 11,
+                            weight: selected ? FontWeight.w800 : FontWeight.w500,
+                            color: selected ? AppColors.ink : AppColors.textMuted,
                           ),
                         ),
                       ],

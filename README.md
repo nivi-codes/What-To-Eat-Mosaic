@@ -28,6 +28,20 @@ transcribed in real time by an Indian-accent speech model.
   against its diet.
 - Onboarding (voice or text), meal logging, saved items, community recipes.
 
+## Design
+
+"Bright, but grown-up": a cream background, ink outlines, bold tight type (Inter Tight) and
+the palette Chilli `#E8412C`, Turmeric `#F5B50F`, Lime `#C6E34A`, Blush `#FFB8C9`,
+Cobalt `#2D4BFF`, Cream `#FBF4E6`, Forest ink `#10372B`.
+
+- **Doodles** (`assets/doodles/`) — 36 line-art food doodles on offset colour blobs, used
+  as the home and welcome wallpaper and in the loading animation, where random doodles
+  parade left to right along a wave (`lib/widgets/doodles.dart`).
+- **Logo** — the "W2E" bottle-cap badge, drawn in code (`lib/widgets/w2e_logo.dart`); the
+  favicon and app icons are rendered from the same design.
+- Shared pieces: `OffsetCard` (outlined card on a lime block), `OutlinePill`, and the cobalt
+  `VoiceMicButton`.
+
 ## Tech stack
 
 | Layer | Tech |

@@ -6,15 +6,27 @@ import '../providers/meal_log_provider.dart';
 import '../providers/eat_flow_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../data/mock_data.dart';
+import '../widgets/doodles.dart';
+import '../widgets/offset_card.dart';
+import '../widgets/w2e_logo.dart';
 
 class EatHomeScreen extends StatelessWidget {
   const EatHomeScreen({super.key});
 
-  String _greeting() {
+  static const _days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  // "Tuesday, 8:40 pm"
+  String _now() {
+    final n = DateTime.now();
+    final h = n.hour % 12 == 0 ? 12 : n.hour % 12;
+    return '${_days[n.weekday - 1]}, $h:${n.minute.toString().padLeft(2, '0')} ${n.hour < 12 ? 'am' : 'pm'}';
+  }
+
+  String _headline() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour >= 4 && hour < 11) return 'What are we eating this morning?';
+    if (hour >= 11 && hour < 17) return 'What are we eating today?';
+    return 'What are we eating tonight?';
   }
 
   @override
@@ -24,7 +36,9 @@ class EatHomeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
+      body: Stack(children: [
+        const Positioned.fill(child: DoodleWallpaper()),
+        SafeArea(
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,30 +53,19 @@ class EatHomeScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _greeting(),
+                            _now(),
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: AppColors.textMuted,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'What are you eating?',
-                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                          const SizedBox(height: 4),
+                          Text(_headline(), style: Theme.of(context).textTheme.headlineMedium),
                         ],
                       ),
                     ),
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLight,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.person_outline, color: AppColors.primary, size: 22),
-                    ),
+                    const SizedBox(width: 8),
+                    const W2ELogo(size: 64),
                   ],
                 ),
               ),
@@ -71,7 +74,7 @@ class EatHomeScreen extends StatelessWidget {
               // ── Start Session Bar ──────────────────────────────────
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: InkWell(
+                child: OffsetCard(
                   onTap: () {
                     context.read<EatFlowProvider>().startSession(
                       voiceMode: true,
@@ -79,54 +82,31 @@ class EatHomeScreen extends StatelessWidget {
                     );
                     context.push('/eat/flow');
                   },
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.cardBorder),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
                     child: Row(
                       children: [
                         Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.mic, color: AppColors.primary, size: 22),
+                          width: 52,
+                          height: 52,
+                          decoration: const BoxDecoration(color: AppColors.cobalt, shape: BoxShape.circle),
+                          child: const Icon(Icons.mic, color: Colors.white, size: 26),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              Text("Tell me what you're craving", style: Theme.of(context).textTheme.titleMedium),
+                              const SizedBox(height: 2),
                               Text(
-                                'Tell me what you want...',
-                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  color: AppColors.textMuted,
-                                ),
-                              ),
-                              Text(
-                                'Speak or type · ~60 sec',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textMuted,
-                                  fontSize: 11,
-                                ),
+                                'Speak or type · decide in 60 seconds',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
                               ),
                             ],
                           ),
                         ),
-                        const Icon(Icons.arrow_forward_ios, color: AppColors.textMuted, size: 16),
+                        const Icon(Icons.arrow_forward, color: AppColors.ink, size: 22),
                       ],
                     ),
                   ),
@@ -145,7 +125,7 @@ class EatHomeScreen extends StatelessWidget {
 
               // ── Quick Categories ───────────────────────────────────
               SizedBox(
-                height: 90,
+                height: 92,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -154,7 +134,7 @@ class EatHomeScreen extends StatelessWidget {
                   itemBuilder: (context, i) {
                     final cat = MockData.quickCategories[i];
                     return _CategoryPill(
-                      emoji: cat['icon'] as String,
+                      doodle: cat['doodle'] as String,
                       label: cat['label'] as String,
                       onTap: () {
                         context.read<EatFlowProvider>().startSession(
@@ -299,6 +279,7 @@ class EatHomeScreen extends StatelessWidget {
           ),
         ),
       ),
+      ]),
     );
   }
 
@@ -327,19 +308,14 @@ class _SectionHeader extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
           GestureDetector(
             onTap: onSeeAll,
             child: Text(
-              'See all',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w600,
-              ),
+              'See all →',
+              style: AppTheme.font(size: 13, weight: FontWeight.w800, color: AppColors.ink),
             ),
           ),
         ],
@@ -351,8 +327,8 @@ class _SectionHeader extends StatelessWidget {
 // ── Category Pill ───────────────────────────────────────────────────────────
 
 class _CategoryPill extends StatelessWidget {
-  const _CategoryPill({required this.emoji, required this.label, required this.onTap});
-  final String emoji;
+  const _CategoryPill({required this.doodle, required this.label, required this.onTap});
+  final String doodle;
   final String label;
   final VoidCallback onTap;
 
@@ -362,24 +338,13 @@ class _CategoryPill extends StatelessWidget {
       onTap: onTap,
       child: Column(
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.cardBorder),
-            ),
-            child: Center(
-              child: Text(emoji, style: const TextStyle(fontSize: 26)),
-            ),
-          ),
+          Image.asset(Doodles.asset(doodle), width: 60, height: 60),
           const SizedBox(height: 6),
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
-              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
             ),
             textAlign: TextAlign.center,
           ),
@@ -403,24 +368,21 @@ class _CompactBalanceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF3D8C6F), Color(0xFF2D7059)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.lime,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.ink, width: 2),
       ),
       child: Row(
         children: [
-          const Icon(Icons.local_fire_department, color: Colors.white70, size: 20),
+          const Icon(Icons.local_fire_department, color: AppColors.ink, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              '$kcal kcal today · $meals meals logged',
-              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+              '$kcal kcal today · $meals ${meals == 1 ? 'meal' : 'meals'} logged',
+              style: AppTheme.font(size: 14, weight: FontWeight.w700, color: AppColors.ink),
             ),
           ),
-          const Icon(Icons.chevron_right, color: Colors.white60, size: 20),
+          const Icon(Icons.chevron_right, color: AppColors.ink, size: 20),
         ],
       ),
     );
@@ -438,16 +400,17 @@ class _NudgeCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF8F0),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+        color: const Color(0xFFFFE3EA),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.ink, width: 2),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.eco_outlined, color: AppColors.primary, size: 20),
+          const Icon(Icons.favorite, color: AppColors.chilli, size: 22),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
+            child: Text(message, style: AppTheme.font(size: 15, weight: FontWeight.w600, color: AppColors.ink)),
           ),
         ],
       ),
@@ -481,13 +444,13 @@ class _RecipeCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: AppColors.ink, width: 2),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               child: Image.network(
                 imageUrl,
                 height: 100,
@@ -524,19 +487,7 @@ class _RecipeCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF0E6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '~$calories kcal',
-                      style: const TextStyle(
-                        fontSize: 10, color: AppColors.accent, fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                  OutlinePill('~$calories kcal', fill: AppColors.turmeric),
                 ],
               ),
             ),
@@ -572,13 +523,13 @@ class _ChefRecipeCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: AppColors.ink, width: 2),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               child: Image.network(
                 imageUrl,
                 height: 110,
@@ -615,7 +566,7 @@ class _ChefRecipeCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.star, color: AppColors.accent, size: 14),
+                      const Icon(Icons.star, color: AppColors.turmeric, size: 15),
                       const SizedBox(width: 3),
                       Text(
                         '$rating',
@@ -666,7 +617,7 @@ class _StarRecipeCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: AppColors.ink, width: 2),
         ),
         child: Stack(
           children: [
@@ -674,7 +625,7 @@ class _StarRecipeCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                   child: Image.network(
                     imageUrl,
                     height: 100,
@@ -703,7 +654,7 @@ class _StarRecipeCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.star, color: AppColors.accent, size: 14),
+                          const Icon(Icons.star, color: AppColors.turmeric, size: 15),
                           const SizedBox(width: 3),
                           Text(
                             '$rating',
@@ -727,12 +678,13 @@ class _StarRecipeCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.accent,
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.turmeric,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.ink, width: 1.5),
                 ),
                 child: Text(
                   badge,
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                  style: AppTheme.font(size: 11, weight: FontWeight.w800, color: AppColors.ink),
                 ),
               ),
             ),
@@ -769,13 +721,13 @@ class _RestaurantCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.cardBorder),
+          border: Border.all(color: AppColors.ink, width: 2),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               child: Image.network(
                 imageUrl,
                 height: 110,
@@ -868,7 +820,7 @@ class _RecentMealTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cardBorder),
+        border: Border.all(color: AppColors.ink, width: 2),
       ),
       child: Row(
         children: [

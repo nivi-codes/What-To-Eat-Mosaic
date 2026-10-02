@@ -102,9 +102,9 @@ class _OnboardingOptionsScreenState extends State<OnboardingOptionsScreen> {
             // Progress bar
             LinearProgressIndicator(
               value: (_step + 1) / _steps.length,
-              backgroundColor: AppColors.cardBorder,
-              color: AppColors.primary,
-              minHeight: 3,
+              backgroundColor: AppColors.divider,
+              color: AppColors.chilli,
+              minHeight: 4,
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -219,11 +219,11 @@ class _SingleSelectGrid extends StatelessWidget {
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primaryLight : AppColors.surface,
+              color: isSelected ? AppColors.lime : AppColors.surface,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isSelected ? AppColors.primary : AppColors.cardBorder,
-                width: isSelected ? 2 : 1,
+                color: AppColors.ink,
+                width: isSelected ? 2.5 : 2,
               ),
             ),
             child: Row(
@@ -236,7 +236,7 @@ class _SingleSelectGrid extends StatelessWidget {
                 Text(
                   o,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                     color: isSelected ? AppColors.primary : AppColors.textDark,
                   ),
                 ),
@@ -271,15 +271,13 @@ class _MultiSelectWrap extends StatelessWidget {
           label: Text(o),
           selected: isSelected,
           onSelected: (_) => onToggle(o),
-          selectedColor: AppColors.primaryLight,
+          selectedColor: AppColors.lime,
           checkmarkColor: AppColors.primary,
           labelStyle: TextStyle(
             color: isSelected ? AppColors.primary : AppColors.textDark,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
           ),
-          side: BorderSide(
-            color: isSelected ? AppColors.primary : AppColors.cardBorder,
-          ),
+          side: const BorderSide(color: AppColors.ink, width: 2),
         );
       }).toList(),
     );

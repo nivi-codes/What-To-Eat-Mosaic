@@ -6,6 +6,7 @@ import '../models/suggestion.dart';
 import '../providers/eat_flow_provider.dart';
 import '../services/web_links.dart';
 import '../theme/app_theme.dart';
+import '../widgets/doodles.dart';
 
 /// "View menu" for a dine-out suggestion: LLM-suggested dishes for the restaurant,
 /// generated on the fly (usually prefetched while the suggestions were shown).
@@ -121,14 +122,8 @@ class _MenuScreenState extends State<MenuScreen> {
               builder: (context, snap) {
                 if (snap.connectionState != ConnectionState.done) {
                   return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Column(
-                      children: [
-                        CircularProgressIndicator(color: AppColors.primary),
-                        SizedBox(height: 14),
-                        Text('Pulling up the menu…', style: TextStyle(color: AppColors.textMuted)),
-                      ],
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: DoodleLoader(title: 'Pulling up the menu…'),
                   );
                 }
                 final sections = snap.data;

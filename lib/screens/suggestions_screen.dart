@@ -7,6 +7,8 @@ import '../providers/saved_provider.dart';
 import '../providers/preferences_provider.dart';
 import '../models/suggestion.dart';
 import '../services/web_links.dart';
+import '../widgets/doodles.dart';
+import '../widgets/offset_card.dart';
 
 class SuggestionsScreen extends StatefulWidget {
   const SuggestionsScreen({super.key});
@@ -44,7 +46,7 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
     if (flow.suggestions.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: const Text('Suggestions')),
-        body: const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: const Center(child: DoodleLoader(title: 'Finding your picks…')),
       );
     }
 
@@ -70,7 +72,7 @@ class _SuggestionsScreenState extends State<SuggestionsScreen> {
         ],
       ),
       body: flow.currentStep == EatFlowStep.loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(child: DoodleLoader(title: 'Finding fresh picks…'))
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
@@ -133,30 +135,21 @@ class _SuggestionCard extends StatelessWidget {
     final nutrition = showHealthy && suggestion.healthyNutrition != null
         ? suggestion.healthyNutrition!
         : suggestion.nutrition;
+    final action = switch (suggestion.path) {
+      'dine' => ('View menu', Icons.restaurant_menu),
+      'order' => ('Order on Swiggy', Icons.delivery_dining_outlined),
+      _ => ('View recipe', Icons.menu_book_outlined),
+    };
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.cardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: OffsetCard(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+            Container(
+              decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.ink, width: 2.5))),
               child: AspectRatio(
                 aspectRatio: 16 / 9,
                 child: Image.network(
@@ -164,104 +157,65 @@ class _SuggestionCard extends StatelessWidget {
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
                     color: AppColors.primaryLight,
-                    child: const Icon(Icons.restaurant, color: AppColors.primary, size: 40),
+                    child: const Icon(Icons.restaurant, color: AppColors.ink, size: 40),
                   ),
                 ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Text(suggestion.title, style: Theme.of(context).textTheme.titleMedium),
+                        child: Text(suggestion.title, style: Theme.of(context).textTheme.titleLarge),
                       ),
                       IconButton(
-                        icon: Icon(
-                          isSaved ? Icons.bookmark : Icons.bookmark_outline,
-                          color: isSaved ? AppColors.primary : AppColors.textMuted,
-                        ),
+                        icon: Icon(isSaved ? Icons.favorite : Icons.favorite_border, color: AppColors.ink),
                         onPressed: onSave,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
+                        tooltip: isSaved ? 'Saved' : 'Save',
+                        style: IconButton.styleFrom(
+                          side: const BorderSide(color: AppColors.ink, width: 2),
+                          backgroundColor: isSaved ? AppColors.blush : AppColors.surface,
+                        ),
                       ),
                     ],
                   ),
-                  Text(suggestion.subtitle, style: Theme.of(context).textTheme.bodyMedium),
-                  const SizedBox(height: 10),
-
-                  // Health highlights
-                  if (suggestion.healthHighlights.isNotEmpty)
-                    Wrap(
-                      spacing: 6,
-                      children: suggestion.healthHighlights.take(3).map((h) => Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.tagBg,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(h, style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w500)),
-                      )).toList(),
-                    ),
-                  const SizedBox(height: 10),
-
-                  // Calorie + toggle row — not for restaurants (no single dish to count)
-                  if (!suggestion.isRestaurant) ...[
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF0E6),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '~${nutrition.calories} kcal',
-                            style: const TextStyle(fontSize: 12, color: AppColors.accent, fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                        const Spacer(),
-                        if (suggestion.hasHealthyVersion)
-                          _HealthyToggle(
-                            showHealthy: showHealthy,
-                            onToggle: onToggleHealthy,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
+                  Text(suggestion.subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textMuted)),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      // No calories for restaurants — there's no single dish to count.
+                      if (!suggestion.isRestaurant) OutlinePill('~${nutrition.calories} kcal', fill: AppColors.turmeric),
+                      ...suggestion.healthHighlights.take(3).map((h) => OutlinePill(h)),
+                    ],
+                  ),
+                  if (!suggestion.isRestaurant && suggestion.hasHealthyVersion) ...[
+                    const SizedBox(height: 12),
+                    _HealthyToggle(showHealthy: showHealthy, onToggle: onToggleHealthy),
                   ],
-                  const Divider(),
+                  const SizedBox(height: 14),
                   Row(
                     children: [
                       Expanded(
-                        child: TextButton.icon(
-                          onPressed: onNotFeeling,
-                          icon: const Icon(Icons.refresh, size: 16),
-                          label: const Text('Not feeling it'),
-                          style: TextButton.styleFrom(foregroundColor: AppColors.textMuted),
+                        child: ElevatedButton.icon(
+                          onPressed: onTap,
+                          icon: Icon(action.$2, size: 18),
+                          label: Text(action.$1),
+                          style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(46)),
                         ),
                       ),
-                      Expanded(
-                        child: TextButton.icon(
-                          onPressed: onTap,
-                          icon: Icon(
-                            switch (suggestion.path) {
-                              'dine' => Icons.restaurant_menu,
-                              'order' => Icons.delivery_dining_outlined,
-                              _ => Icons.menu_book_outlined,
-                            },
-                            size: 16,
-                          ),
-                          label: Text(switch (suggestion.path) {
-                            'dine' => 'View menu',
-                            'order' => 'Order on Swiggy',
-                            _ => 'View recipe',
-                          }),
-                          style: TextButton.styleFrom(foregroundColor: AppColors.primary),
-                        ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        onPressed: onNotFeeling,
+                        icon: const Icon(Icons.refresh, size: 16),
+                        label: const Text('Not feeling it'),
+                        style: TextButton.styleFrom(foregroundColor: AppColors.textMuted),
                       ),
                     ],
                   ),
@@ -275,6 +229,7 @@ class _SuggestionCard extends StatelessWidget {
   }
 }
 
+/// Regular / Healthy pill switch; the active side fills lime.
 class _HealthyToggle extends StatelessWidget {
   const _HealthyToggle({required this.showHealthy, required this.onToggle});
   final bool showHealthy;
@@ -283,15 +238,16 @@ class _HealthyToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: AppColors.tagBg,
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: AppColors.ink, width: 2),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          _ToggleOption('Regular', !showHealthy, () => onToggle(false)),
-          _ToggleOption('Healthy', showHealthy, () => onToggle(true)),
+          Expanded(child: _ToggleOption('Regular', !showHealthy, () => onToggle(false))),
+          Expanded(child: _ToggleOption('Healthy', showHealthy, () => onToggle(true))),
         ],
       ),
     );
@@ -310,18 +266,16 @@ class _ToggleOption extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: active ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
+          color: active ? AppColors.lime : Colors.transparent,
+          borderRadius: BorderRadius.circular(26),
+          border: active ? Border.all(color: AppColors.ink, width: 2) : null,
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: active ? Colors.white : AppColors.textMuted,
-          ),
+          style: AppTheme.font(size: 14, weight: active ? FontWeight.w800 : FontWeight.w600, color: AppColors.ink),
         ),
       ),
     );
