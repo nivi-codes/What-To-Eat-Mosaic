@@ -1,0 +1,79 @@
+1
+00:00:00,300 --> 00:00:04,993
+WhatToEat is an app that literally helps you decide what to eat in under a minute.
+
+2
+00:00:05,500 --> 00:00:09,255
+Setting up takes one sentence. Just tell it your food preferences.
+
+3
+00:00:10,000 --> 00:00:17,120
+“I'm vegetarian. I'm a big fan of dosas and chaat, I love spicy food, I have no allergies, and I prefer healthy options.”
+
+4
+00:00:18,000 --> 00:00:26,021
+It transcribes as you speak, then works out what you meant: dosas and chaat become South Indian and street food.
+
+5
+00:00:26,400 --> 00:00:33,824
+Home changes with the time of day, with quick picks, trending dishes, chef recipes and popular restaurants.
+
+6
+00:00:34,200 --> 00:00:39,149
+It helps with all three: cooking at home, ordering in, and dining out.
+
+7
+00:00:39,500 --> 00:00:42,547
+Cooking tonight? Just say what's in the kitchen.
+
+8
+00:00:43,100 --> 00:00:48,300
+“I've got paneer, capsicum and onions at home. I want to cook something quick and spicy for dinner.”
+
+9
+00:00:49,200 --> 00:00:55,600
+One sentence answered all five questions. Every pick is vegetarian, like the profile.
+
+10
+00:00:56,200 --> 00:01:01,235
+The recipe is written on the spot, around the ingredients you actually have.
+
+11
+00:01:02,200 --> 00:01:06,467
+You can also log your meals, and it will save them to your daily log.
+
+12
+00:01:06,800 --> 00:01:11,408
+Had a heavy day? It gently nudges you toward a light dinner.
+
+13
+00:01:13,460 --> 00:01:17,623
+Eating out instead? Typing works just as well.
+
+14
+00:01:19,100 --> 00:01:23,452
+It asks only what it still needs: flavour, then the vibe.
+
+15
+00:01:24,800 --> 00:01:30,688
+For a night out, you get places to go, not calories to count, each with a suggested order.
+
+16
+00:01:31,000 --> 00:01:36,973
+The menu keeps to vegetarian dishes, with prices, and a link to find the place on Google Maps.
+
+17
+00:01:37,400 --> 00:01:40,131
+Staying in? Ask for delivery the same way.
+
+18
+00:01:41,700 --> 00:01:46,820
+Each pick shows its calories, and Order on Swiggy opens the dish, ready to order.
+
+19
+00:01:47,570 --> 00:01:51,581
+And Community has recipes other people love, filtered to your diet.
+
+20
+00:01:52,800 --> 00:01:58,859
+Cook, order in, or dine out. WhatToEat: decide what to eat in under a minute.

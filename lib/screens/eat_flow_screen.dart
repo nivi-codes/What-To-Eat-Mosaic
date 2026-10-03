@@ -133,6 +133,7 @@ class _FreeInputStepState extends State<_FreeInputStep> {
   final _liveIntent = LiveIntent('eat_flow');
 
   Map<String, dynamic> _detected = {};
+  Map<String, dynamic> _liveDetected = {}; // last LLM live preview (not the offline keyword fallback)
   List<String> _remainingQuestions = [];
 
   final GnaniSpeechService _gnaniService = GnaniSpeechService();
@@ -153,11 +154,12 @@ class _FreeInputStepState extends State<_FreeInputStep> {
     _gnaniService.onTranscript = (transcript, isFinal) {
       if (!mounted) return;
       setState(() => _transcript = transcript);
-      _analyzeLive(transcript);
 
-      if (isFinal && transcript.isNotEmpty) {
+      if (!isFinal) {
+        _analyzeLive(transcript);
+      } else if (transcript.isNotEmpty) {
         setState(() => _listening = false);
-        context.read<EatFlowProvider>().submitFreeInput(transcript);
+        _submitFreeInput(transcript);
       }
     };
 
@@ -210,6 +212,7 @@ class _FreeInputStepState extends State<_FreeInputStep> {
         if (mounted) setState(() => _remainingQuestions = nudges);
       },
       delay: const Duration(milliseconds: 200),
+      dietaryType: context.read<EatFlowProvider>().preferences?.dietaryType,
     );
   }
 
@@ -221,6 +224,7 @@ class _FreeInputStepState extends State<_FreeInputStep> {
       onResult: (nudges) {
         if (mounted) setState(() => _remainingQuestions = nudges);
       },
+      dietaryType: context.read<EatFlowProvider>().preferences?.dietaryType,
     );
   }
 
@@ -239,6 +243,7 @@ class _FreeInputStepState extends State<_FreeInputStep> {
       _micReady = false;
       _transcript = '';
       _detected = {};
+      _liveDetected = {};
       _remainingQuestions = NudgeService.getDefaultNudges('eat_flow', {});
     });
 
@@ -278,7 +283,10 @@ class _FreeInputStepState extends State<_FreeInputStep> {
         _analyzeLive(text);
       } else {
         _liveIntent.cancel();
-        setState(() => _detected = {});
+        setState(() {
+          _detected = {};
+          _liveDetected = {};
+        });
         _fetchInitialNudges();
       }
     });
@@ -288,6 +296,7 @@ class _FreeInputStepState extends State<_FreeInputStep> {
   void _analyzeLive(String text) {
     _liveIntent.update(text, (detected) {
       if (!mounted) return;
+      if (detected != null) _liveDetected = detected;
       final d = detected ?? EatFlowProvider.analyzeTranscript(text);
       setState(() => _detected = d);
       _fetchSmartNudges(text, d);
@@ -297,7 +306,13 @@ class _FreeInputStepState extends State<_FreeInputStep> {
   void _submitText() {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
-    context.read<EatFlowProvider>().submitFreeInput(text);
+    _submitFreeInput(text);
+  }
+
+  // The precise pass on submit supersedes any live preview still pending or in flight.
+  void _submitFreeInput(String text) {
+    _liveIntent.cancel();
+    context.read<EatFlowProvider>().submitFreeInput(text, live: _liveDetected);
   }
 
   void _skipToQuestions() {
@@ -361,20 +376,7 @@ class _FreeInputStepState extends State<_FreeInputStep> {
                       Wrap(
                         spacing: 6,
                         runSpacing: 6,
-                        children: _detected.entries.map((e) {
-                          final val = e.value is List ? (e.value as List).join(', ') : e.value.toString();
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryLight,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${_labelFor(e.key)}: $val',
-                              style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w500),
-                            ),
-                          );
-                        }).toList(),
+                        children: _detected.entries.map((e) => _AnswerChip(e.key, e.value)).toList(),
                       ),
                     ],
                   ],
@@ -417,20 +419,7 @@ class _FreeInputStepState extends State<_FreeInputStep> {
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
-                children: _detected.entries.map((e) {
-                  final val = e.value is List ? (e.value as List).join(', ') : e.value.toString();
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${_labelFor(e.key)}: $val',
-                      style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w500),
-                    ),
-                  );
-                }).toList(),
+                children: _detected.entries.map((e) => _AnswerChip(e.key, e.value)).toList(),
               ),
             ],
             const SizedBox(height: 12),
@@ -445,33 +434,31 @@ class _FreeInputStepState extends State<_FreeInputStep> {
 
           const SizedBox(height: 12),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: Icon(
-                  isVoice ? Icons.keyboard : Icons.mic,
-                  color: AppColors.textMuted,
-                ),
-                onPressed: () {
-                  if (_listening) {
-                    _gnaniService.stopListening();
-                    setState(() {
-                      _listening = false;
-                      _micReady = false;
-                    });
-                  }
-                  flow.toggleInputMode();
-                },
-                tooltip: isVoice ? 'Type instead' : 'Speak instead',
+          // The whole "Type instead" label is the button, not just its icon.
+          Center(
+            child: TextButton.icon(
+              icon: Icon(
+                isVoice ? Icons.keyboard : Icons.mic,
+                color: AppColors.textMuted,
+                size: 24,
               ),
-              Text(
+              onPressed: () {
+                if (_listening) {
+                  _gnaniService.stopListening();
+                  setState(() {
+                    _listening = false;
+                    _micReady = false;
+                  });
+                }
+                flow.toggleInputMode();
+              },
+              label: Text(
                 isVoice ? 'Type instead' : 'Speak instead',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textMuted,
                 ),
               ),
-            ],
+            ),
           ),
 
           const SizedBox(height: 4),
@@ -483,19 +470,6 @@ class _FreeInputStepState extends State<_FreeInputStep> {
         ],
       ),
     );
-  }
-
-  String _labelFor(String key) {
-    switch (key) {
-      case 'mealType': return 'Meal';
-      case 'flavours': return 'Flavour';
-      case 'method': return 'How';
-      case 'ingredients': return 'With';
-      case 'cookTime': return 'Time';
-      case 'cuisine': return 'Cuisine';
-      case 'vibe': return 'Vibe';
-      default: return key;
-    }
   }
 }
 
@@ -969,29 +943,26 @@ class _IngredientsStepState extends State<_IngredientsStep> {
           ],
 
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                icon: Icon(
-                  _voiceMode ? Icons.keyboard : Icons.mic,
-                  color: AppColors.textMuted,
-                  size: 20,
-                ),
-                onPressed: () {
-                  if (_listening) {
-                    _gnaniService.stopListening();
-                    _listening = false;
-                    _micReady = false;
-                  }
-                  setState(() => _voiceMode = !_voiceMode);
-                },
+          Center(
+            child: TextButton.icon(
+              icon: Icon(
+                _voiceMode ? Icons.keyboard : Icons.mic,
+                color: AppColors.textMuted,
+                size: 20,
               ),
-              Text(
+              onPressed: () {
+                if (_listening) {
+                  _gnaniService.stopListening();
+                  _listening = false;
+                  _micReady = false;
+                }
+                setState(() => _voiceMode = !_voiceMode);
+              },
+              label: Text(
                 _voiceMode ? 'Type instead' : 'Speak instead',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 4),
           TextButton(
@@ -1105,16 +1076,78 @@ class _LoadingStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: DoodleLoader(
-        title: 'Finding your picks…',
-        subtitle: 'Matching your mood, your diet and what you have',
+    final flow = context.read<EatFlowProvider>();
+    // The answers the picks are matched on, so it's visible what was understood.
+    final answers = <String, Object?>{
+      'mealType': flow.mealType,
+      'method': flow.method,
+      'flavours': flow.flavours,
+      if (flow.method == 'cook') ...{'ingredients': flow.ingredients, 'cookTime': flow.cookTime},
+      if (flow.method == 'order') 'cuisine': flow.cuisinePreference,
+      if (flow.method == 'dine') 'vibe': flow.dineVibe,
+    }..removeWhere((_, v) => v == null || (v is List && v.isEmpty));
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const DoodleLoader(
+            title: 'Finding your picks…',
+            subtitle: 'Matching your mood, your diet and what you have',
+          ),
+          if (answers.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 6,
+                runSpacing: 6,
+                children: answers.entries.map((e) => _AnswerChip(e.key, e.value!)).toList(),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
 }
 
 // ── Shared UI Pieces ──────────────────────────────────────────────────────────
+
+/// One understood answer, e.g. "With: Paneer, Capsicum".
+class _AnswerChip extends StatelessWidget {
+  const _AnswerChip(this.field, this.value);
+  final String field;
+  final Object value;
+
+  static const _labels = {
+    'mealType': 'Meal',
+    'flavours': 'Flavour',
+    'method': 'How',
+    'ingredients': 'With',
+    'cookTime': 'Time',
+    'cuisine': 'Cuisine',
+    'vibe': 'Vibe',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final v = value;
+    final text = v is List ? v.join(', ') : v.toString();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        '${_labels[field] ?? field}: $text',
+        style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w500),
+      ),
+    );
+  }
+}
 
 class _BigTile extends StatelessWidget {
   const _BigTile({required this.icon, required this.label, required this.onTap});

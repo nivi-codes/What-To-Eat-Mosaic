@@ -39,6 +39,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String? _healthyPreference;
 
   Map<String, dynamic> _detected = {};
+  Map<String, dynamic> _liveDetected = {}; // last LLM live preview (not the offline keyword fallback)
   List<String> _remainingQuestions = [];
 
   final _textController = TextEditingController();
@@ -80,9 +81,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _gnaniService.onTranscript = (transcript, isFinal) {
       if (!mounted) return;
       setState(() => _transcript = transcript);
-      _analyzeLive(transcript);
 
-      if (isFinal && transcript.isNotEmpty) {
+      if (!isFinal) {
+        _analyzeLive(transcript);
+      } else if (transcript.isNotEmpty) {
         setState(() => _listening = false);
         _processInput(transcript);
       }
@@ -224,6 +226,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _micReady = false;
       _transcript = '';
       _detected = {};
+      _liveDetected = {};
       _remainingQuestions = NudgeService.getDefaultNudges('onboarding', {});
     });
 
@@ -268,6 +271,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _liveIntent.cancel();
         setState(() {
           _detected = {};
+          _liveDetected = {};
         });
         _fetchInitialNudges();
       }
@@ -278,6 +282,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _analyzeLive(String text) {
     _liveIntent.update(text, (detected) {
       if (!mounted || _understanding || _freeInputDone) return;
+      if (detected != null) _liveDetected = detected;
       final d = detected ?? _analyzeOnboardingTranscript(text);
       setState(() => _detected = d);
       _fetchSmartNudges(text, d);
@@ -294,8 +299,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _processInput(String text) async {
     if (_understanding) return;
+    // The precise pass supersedes any live preview still pending or in flight.
+    _liveIntent.cancel();
     setState(() => _understanding = true);
-    final detected = await IntentService.extract('onboarding', text, precise: true) ?? _analyzeOnboardingTranscript(text);
+    final precise = await IntentService.extract('onboarding', text, precise: true);
+    // The precise pass now and then drops an answer the live preview already took from
+    // the same words (both are grounded in them), so the preview fills only those gaps.
+    final detected = precise != null ? {..._liveDetected, ...precise} : _analyzeOnboardingTranscript(text);
     if (!mounted) return;
     _understanding = false;
     _detected = detected;

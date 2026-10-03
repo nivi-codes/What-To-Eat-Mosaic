@@ -79,11 +79,15 @@ function normalize(s) {
 // otherwise tends to invent plausible values the user never expressed. Quotes may
 // skip words ("get something ... delivered"), so the evidence words must appear in
 // the text in order, but not necessarily contiguously.
+// Quotes often differ from the input by a plural ("dosa and chaat" for "dosas and
+// chaat"), so words are compared without a trailing s / es.
+const stem = (w) => (w.length > 3 ? w.replace(/(es|s)$/, '') : w);
+
 function groundedValues(raw, text) {
-  const words = normalize(text).split(' ');
+  const words = normalize(text).split(' ').map(stem);
   const out = {};
   const grounded = (f) => {
-    const ev = f && typeof f.evidence === 'string' ? normalize(f.evidence).split(' ').filter(Boolean) : [];
+    const ev = f && typeof f.evidence === 'string' ? normalize(f.evidence).split(' ').filter(Boolean).map(stem) : [];
     if (!ev.length) return false;
     let j = 0;
     for (const w of words) if (j < ev.length && w === ev[j]) j++;
@@ -99,6 +103,14 @@ function groundedValues(raw, text) {
     }
   }
   return out;
+}
+
+// The model now and then skips a key even when the words are plain ("... spicy for
+// dinner" came back without a meal). A meal named outright is not a guess, so it is
+// filled in when exactly one is named; anything implied is still left to the model.
+function namedMeal(text) {
+  const meals = new Set((normalize(text).match(/\b(breakfast|lunch|dinner|snacks?)\b/g) || []).map((w) => w.replace(/s$/, '')));
+  return meals.size === 1 ? [...meals][0] : undefined;
 }
 
 function mergeValues(results) {
@@ -172,7 +184,9 @@ export default async function handler(req, res) {
     const settled = await Promise.allSettled(Array.from({ length: attempts }, extractOnce));
     const results = settled.filter((r) => r.status === 'fulfilled').map((r) => r.value);
     if (!results.length) throw settled[0].reason;
-    return res.status(200).json({ detected: sanitize(flowType, mergeValues(results)) });
+    const merged = mergeValues(results);
+    if (flowType === 'eat_flow' && !merged.mealType) merged.mealType = namedMeal(text);
+    return res.status(200).json({ detected: sanitize(flowType, merged) });
   } catch (err) {
     console.error('Intent extraction failed:', err.message);
     return res.status(502).json({ error: 'Intent extraction failed' });

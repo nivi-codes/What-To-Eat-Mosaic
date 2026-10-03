@@ -3,7 +3,7 @@
 // LLM-generated "what to order here" menu. Not the restaurant's official menu, so
 // the client labels it as suggested with approximate prices.
 import { sarvamChat, extractJson, str, strList, num, readBody } from './_sarvam.js';
-import { dietClass, dietRule, isAllowed, dishDiet, violatesDiet } from './_diet.js';
+import { dietClass, dietRule, isAllowed, honestDiet } from './_diet.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -24,7 +24,7 @@ Diet rule: ${dietRule(diet)}${avoid.length ? ` They avoid: ${avoid.join(', ')}.`
 
 Reply with ONLY this JSON, no markdown:
 {"sections": [{"title": "Starters", "items": [{"name": "dish", "description": "under 12 words", "price": number (typical INR), "diet": "vegan" | "vegetarian" | "eggetarian" | "non-vegetarian"}]}]}
-Use 3-4 sections (e.g. Starters, Mains, Breads/Rice, Desserts/Drinks) with 3-5 items each.`;
+Use 3-4 sections (e.g. Starters, Mains, Breads/Rice, Desserts/Drinks) with 3-5 different dishes each (no near-duplicates). Describe each dish plainly, as it really is; don't add the flavour preference to every description.`;
 
   try {
     const reply = await sarvamChat({ user: prompt, maxTokens: 1500, temperature: 0.5, timeoutMs: 40000 });
@@ -33,13 +33,12 @@ Use 3-4 sections (e.g. Starters, Mains, Breads/Rice, Desserts/Drinks) with 3-5 i
       .map((s) => ({
         title: str(s?.title, 40) || 'Dishes',
         items: (Array.isArray(s?.items) ? s.items : [])
-          .map((it) => ({
-            name: str(it?.name, 80),
-            description: str(it?.description, 140) || '',
-            price: Math.round(num(it?.price)),
-            diet: dishDiet(it?.diet),
-          }))
-          .filter((it) => it.name && isAllowed(it.diet, diet) && !violatesDiet(`${it.name} ${it.description}`, diet))
+          .map((it) => {
+            const name = str(it?.name, 80);
+            const description = str(it?.description, 140) || '';
+            return { name, description, price: Math.round(num(it?.price)), diet: honestDiet(it?.diet, `${name} ${description}`) };
+          })
+          .filter((it) => it.name && isAllowed(it.diet, diet))
           .slice(0, 6),
       }))
       .filter((s) => s.items.length)

@@ -899,7 +899,7 @@ class MockData {
     },
     {
       'id': 'c4', 'title': 'Rajma Chawal', 'author': 'Vikram D.', 'likes': 198,
-      'mealType': 'lunch', 'tags': ['veg', 'comfort', 'filling'],
+      'mealType': 'lunch', 'tags': ['veg', 'vegan', 'comfort', 'filling'],
       'imageUrl': _imgRajmaChawal, 'calories': 460, 'cookTime': '45 min',
       'description': 'Classic kidney bean curry served over steamed basmati rice.',
     },
@@ -929,7 +929,7 @@ class MockData {
     },
     {
       'id': 'c9', 'title': 'Aloo Gobi', 'author': 'Kavita S.', 'likes': 138,
-      'mealType': 'lunch', 'tags': ['veg', 'comfort', 'spiced'],
+      'mealType': 'lunch', 'tags': ['veg', 'vegan', 'comfort', 'spiced'],
       'imageUrl': _imgAlooGobi, 'calories': 280, 'cookTime': '30 min',
       'description': 'Dry-spiced cauliflower and potato stir-fry with fresh ginger.',
     },
@@ -951,6 +951,14 @@ class MockData {
       'imageUrl': _imgTomatoSoup, 'calories': 160, 'cookTime': '20 min',
       'description': 'Smooth, tangy tomato soup with garlic croutons and fresh cream.',
     },
+  ];
+
+  // ─── Demo: a heavy breakfast and lunch (`?demo=heavy-day`) ─────────────────
+  static const List<Map<String, dynamic>> heavyDayMeals = [
+    {'title': 'Aloo Paratha', 'mealType': 'breakfast', 'hour': 9, 'minute': 10,
+     'calories': 560, 'protein': 12, 'carbs': 70, 'fat': 26, 'imageUrl': _imgAlooParatha},
+    {'title': 'Chole Bhature', 'mealType': 'lunch', 'hour': 13, 'minute': 35,
+     'calories': 620, 'protein': 18, 'carbs': 78, 'fat': 28, 'imageUrl': _imgCholeBhature},
   ];
 
   // ─── Nudge messages ────────────────────────────────────────────────────────

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../data/mock_data.dart';
+import '../providers/preferences_provider.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -14,16 +16,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
   String _filter = 'All';
   static const _filters = ['All', 'Trending', 'Breakfast', 'Lunch', 'Dinner', 'Snack', 'Veg'];
 
+  // Same diet rule as the picks: vegan sees vegan, vegetarian also vegetarian,
+  // eggetarian also egg dishes, non-veg sees everything.
+  static bool _fitsDiet(Map<String, dynamic> recipe, String diet) {
+    final tags = (recipe['tags'] as List).map((t) => (t as String).toLowerCase()).toSet();
+    if (diet.contains('vegan')) return tags.contains('vegan');
+    if (diet.contains('egg')) return !tags.contains('non-veg');
+    if (diet.contains('non')) return true;
+    if (diet.contains('veg')) return !tags.contains('non-veg') && !tags.contains('eggetarian');
+    return true;
+  }
+
   List<Map<String, dynamic>> get _filtered {
-    if (_filter == 'All' || _filter == 'Trending') return MockData.communityRecipes;
+    final diet = context.watch<PreferencesProvider>().preferences.dietaryType.toLowerCase();
+    final mine = MockData.communityRecipes.where((r) => _fitsDiet(r, diet));
+    if (_filter == 'All' || _filter == 'Trending') return mine.toList();
     if (_filter == 'Veg') {
-      return MockData.communityRecipes
-          .where((r) => (r['tags'] as List).contains('veg'))
-          .toList();
+      return mine.where((r) => (r['tags'] as List).contains('veg')).toList();
     }
-    return MockData.communityRecipes
-        .where((r) => (r['mealType'] as String).toLowerCase() == _filter.toLowerCase())
-        .toList();
+    return mine.where((r) => (r['mealType'] as String).toLowerCase() == _filter.toLowerCase()).toList();
   }
 
   @override

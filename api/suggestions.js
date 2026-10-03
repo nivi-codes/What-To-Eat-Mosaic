@@ -94,14 +94,15 @@ function buildPrompt(p) {
     cook: `Dishes they can cook at home NOW, mainly from the ingredients they have (basic spices/oil/onion assumed).
 Each item: {"title": "dish name", "subtitle": "<total minutes> min · <Vegan/Veg/Egg/Non-veg> · <cuisine>", "cuisine": "...", ${DISH_DIET_FIELD}, ${IMAGE_QUERY_FIELD}, "nutrition": {"calories": n, "proteinG": n, "carbsG": n, "fatG": n, "fiberG": n}, "hasHealthyVersion": bool, "healthyNutrition": {...} or null, "healthHighlights": ["max 3 short"], "tags": ["max 4"]}`,
     order: `Dishes to order for delivery from popular Indian delivery restaurants.
-Each item: {"title": "dish name", "subtitle": "<restaurant> · <minutes> min · ₹<price>", "cuisine": "...", ${DISH_DIET_FIELD}, ${IMAGE_QUERY_FIELD}, "nutrition": {"calories": n, "proteinG": n, "carbsG": n, "fatG": n, "fiberG": n}, "healthHighlights": ["max 3 short"], "tags": ["max 4"]}`,
+Each item: {"title": "dish name", "subtitle": "<restaurant> · <minutes> min · ₹<price>", "cuisine": "...", ${DISH_DIET_FIELD}, ${IMAGE_QUERY_FIELD}, "nutrition": {"calories": n, "proteinG": n, "carbsG": n, "fatG": n, "fiberG": n}, "healthHighlights": ["max 3 short"], "tags": ["max 4"]}
+<restaurant> is a restaurant or chain that delivers that dish, never the delivery app itself (not "Swiggy" or "Zomato").`,
     dine: `Restaurants/cafés to go out to in an Indian metro city (well-known chains or popular styles of place) that have plenty of dishes fitting the diet rule.
 Each item: {"title": "restaurant name", "subtitle": "<cuisine> · <vibe> · <₹ to ₹₹₹₹>", "cuisine": "...", "imageQuery": "the signature dish this place is known for that fits the diet rule, e.g. Masala dosa", "healthHighlights": ["max 3 short things it's known for, e.g. 'Great for groups'"], "tags": ["max 4"]}. No nutrition.`,
   };
 
   const count = p.method === 'dine' ? 3 : 5;
   return `You recommend food for urban Indians aged 18-35. Suggest exactly ${count} DIFFERENT options (vary cuisine and effort) that fit:
-${p.method === 'dine' ? '' : 'Suggest real, well-known dishes people would recognise by name (e.g. "Cabbage thoran", "Vegetable pulao", "Egg bhurji") — not invented fusion names like "Cabbage Rice Cutlet".\n'}
+${p.method === 'dine' ? '' : 'Suggest real, well-known dishes people would recognise by name (e.g. "Cabbage thoran", "Vegetable pulao", "Egg bhurji") — not invented fusion names like "Cabbage Rice Cutlet".\nHealth highlights must be true of the dish as usually made: paneer, ghee, butter, curd and cream are dairy, so such dishes are not "plant-based" or "vegan".\n'}
 ${context}
 
 ${shapes[p.method]}

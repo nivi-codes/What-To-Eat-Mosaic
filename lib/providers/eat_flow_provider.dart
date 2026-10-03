@@ -72,6 +72,7 @@ class EatFlowProvider extends ChangeNotifier {
         flavours: _flavours,
         cookTime: _cookTime,
         preferences: _preferences,
+        card: _suggestions.where((s) => s.recipeId == recipeId).firstOrNull,
       );
 
   /// LLM "what to order here" menu for a restaurant suggestion (shared/cached).
@@ -143,6 +144,18 @@ class EatFlowProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// From the "something light?" nudge: straight to light, quick home-cooked picks.
+  void startLightMeal({required String mealType, UserPreferences? preferences, List<String> heavyMeals = const []}) {
+    startSession(voiceMode: false, preferences: preferences);
+    _mealType = mealType;
+    _flavours = ['light'];
+    _method = 'cook';
+    _cookTime = '20 minutes';
+    _freeInputText = 'Something light and easy on the stomach for $mealType'
+        '${heavyMeals.isEmpty ? '' : ', after ${heavyMeals.join(' and ')} earlier today'}';
+    _fetchSuggestions();
+  }
+
   void toggleInputMode() {
     _isVoiceMode = !_isVoiceMode;
     notifyListeners();
@@ -150,13 +163,16 @@ class EatFlowProvider extends ChangeNotifier {
 
   /// Understands free-form input with the LLM, applies what was detected,
   /// then advances to the first unanswered question.
-  Future<void> submitFreeInput(String text) async {
+  /// [live] is the screen's last live-preview result for the same words; it fills only
+  /// the answers the precise pass happens to drop.
+  Future<void> submitFreeInput(String text, {Map<String, dynamic> live = const {}}) async {
     if (_understanding) return;
     _freeInputText = text;
     _understanding = true;
     notifyListeners();
 
-    final detected = await IntentService.extract('eat_flow', text, precise: true) ?? analyzeTranscript(text);
+    final precise = await IntentService.extract('eat_flow', text, precise: true);
+    final detected = precise != null ? {...live, ...precise} : analyzeTranscript(text);
     _understanding = false;
     if (_currentStep != EatFlowStep.freeInput) return; // session reset/closed meanwhile
     _applyDetected(detected);

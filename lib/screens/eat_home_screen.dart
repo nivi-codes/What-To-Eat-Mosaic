@@ -397,6 +397,7 @@ class _NudgeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final log = context.read<MealLogProvider>();
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -410,7 +411,31 @@ class _NudgeCard extends StatelessWidget {
           const Icon(Icons.favorite, color: AppColors.chilli, size: 22),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(message, style: AppTheme.font(size: 15, weight: FontWeight.w600, color: AppColors.ink)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(message, style: AppTheme.font(size: 15, weight: FontWeight.w600, color: AppColors.ink)),
+                const SizedBox(height: 10),
+                FilledButton(
+                  onPressed: () {
+                    context.read<EatFlowProvider>().startLightMeal(
+                          mealType: log.nextMeal,
+                          preferences: context.read<PreferencesProvider>().preferences,
+                          heavyMeals: log.heavyToday.map((l) => l.recipeTitle).toList(),
+                        );
+                    context.push('/eat/flow');
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.ink,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text('Show light ${log.nextMeal} picks', style: AppTheme.font(size: 13, weight: FontWeight.w700, color: Colors.white)),
+                ),
+              ],
+            ),
           ),
         ],
       ),

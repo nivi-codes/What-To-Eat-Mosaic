@@ -24,7 +24,11 @@ class WhatToEatRoot extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => PreferencesProvider()),
         ChangeNotifierProvider(create: (_) => EatFlowProvider()),
-        ChangeNotifierProvider(create: (_) => MealLogProvider()),
+        ChangeNotifierProvider(create: (_) {
+          final log = MealLogProvider();
+          if (Uri.base.queryParameters['demo'] == 'heavy-day') log.seedHeavyDay();
+          return log;
+        }),
         ChangeNotifierProvider(create: (_) => SavedProvider()),
       ],
       child: const _App(),

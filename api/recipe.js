@@ -1,4 +1,4 @@
-// POST /api/recipe  { id, title, imageUrl?, ingredients?, mealType?, flavours?, cookTime?, preferences? }
+// POST /api/recipe  { id, title, imageUrl?, ingredients?, mealType?, flavours?, cookTime?, preferences?, card? }
 // -> Recipe JSON (shape of lib/models/recipe.dart), generated on the fly by the LLM.
 import { sarvamChat, extractJson, str, strList, num, readBody } from './_sarvam.js';
 import { dietClass, dietRule, isAllowed, dishDiet, violatesDiet, DISH_DIET_FIELD } from './_diet.js';
@@ -14,9 +14,34 @@ function nutrition(v) {
   };
 }
 
-function buildPrompt({ title, ingredients, mealType, flavours, cookTime, preferences, diet }) {
+// Pins a nutrition block to the calories the suggestion card showed, scaling the macros with it.
+function scaledTo(n, calories) {
+  if (!n || !calories || !n.calories) return n;
+  const f = calories / n.calories;
+  return {
+    calories,
+    proteinG: Math.round(n.proteinG * f),
+    carbsG: Math.round(n.carbsG * f),
+    fatG: Math.round(n.fatG * f),
+    fiberG: Math.round(n.fiberG * f),
+  };
+}
+
+function cardLine({ cuisine, minutes, calories, healthyCalories }) {
+  const facts = [
+    cuisine && `${cuisine} cuisine`,
+    minutes && `ready in ${minutes} min`,
+    calories && `about ${calories} kcal per serving`,
+    healthyCalories && `a lighter version of about ${healthyCalories} kcal`,
+  ].filter(Boolean);
+  if (!facts.length) return '';
+  return `The user picked this dish from a card that promised: ${facts.join(', ')}. The recipe must match that card${healthyCalories ? ', including the lighter version' : ''}.`;
+}
+
+function buildPrompt({ title, ingredients, mealType, flavours, cookTime, preferences, diet, card }) {
   const avoid = strList(preferences?.avoidances).filter((a) => a.toLowerCase() !== 'none');
   return `Write a home-cooking recipe for "${title}" for an Indian home kitchen.
+${cardLine(card)}
 ${ingredients.length ? `The user HAS these ingredients: ${ingredients.join(', ')}. Build the recipe around them; you may add common pantry staples (salt, oil, ghee, basic spices, onion, garlic, ginger, green chilli) but avoid other ingredients they didn't mention unless essential — if essential, mark it "(optional)" or "(if available)".` : ''}
 ${mealType ? `Meal: ${mealType}.` : ''} ${strList(flavours).length ? `They want it: ${strList(flavours).join(', ')}.` : ''} ${cookTime && cookTime !== 'Any time' ? `Total time must fit within ${cookTime}.` : ''}
 Diet rule: ${dietRule(diet)} Do NOT use any ingredient this rule forbids, even if the user has it — adapt the dish instead.${avoid.length ? ` Must avoid: ${avoid.join(', ')}.` : ''}
@@ -58,6 +83,14 @@ export default async function handler(req, res) {
     preferences: body.preferences && typeof body.preferences === 'object' ? body.preferences : {},
   };
   params.diet = dietClass(params.preferences.dietaryType);
+  // The suggestion card the user tapped: the recipe keeps its cuisine, time and calories.
+  const card = body.card && typeof body.card === 'object' ? body.card : {};
+  params.card = {
+    cuisine: str(card.cuisine, 40),
+    minutes: Math.round(num(card.minutes)),
+    calories: Math.round(num(card.calories)),
+    healthyCalories: Math.round(num(card.healthyCalories)),
+  };
 
   try {
     // Diet compliance is checked from the recipe's own label; regenerate once if it breaks the rule.
@@ -73,12 +106,12 @@ export default async function handler(req, res) {
     if (!r) throw new Error('Recipe broke the diet rule twice');
     const ingredients = strList(r.ingredients, 40);
     const steps = strList(r.steps, 25, 600);
-    const base = nutrition(r.nutrition);
+    const base = scaledTo(nutrition(r.nutrition), params.card.calories);
     if (!ingredients.length || !steps.length || !base) throw new Error('Incomplete recipe from LLM');
 
     const healthyIngredients = strList(r.healthyIngredients, 40);
     const healthySteps = strList(r.healthySteps, 25, 600);
-    const healthyNutrition = nutrition(r.healthyNutrition);
+    const healthyNutrition = scaledTo(nutrition(r.healthyNutrition), params.card.healthyCalories);
     const hasHealthyVersion = Boolean(r.hasHealthyVersion && healthyNutrition && (healthyIngredients.length || healthySteps.length));
 
     return res.status(200).json({
@@ -98,7 +131,7 @@ export default async function handler(req, res) {
       healthySteps: hasHealthyVersion && healthySteps.length ? healthySteps : null,
       prepTimeMinutes: Math.round(num(r.prepTimeMinutes, 10)),
       cookTimeMinutes: Math.round(num(r.cookTimeMinutes, 20)),
-      cuisineType: str(r.cuisineType, 40) || 'Indian',
+      cuisineType: params.card.cuisine || str(r.cuisineType, 40) || 'Indian',
       diet: dishDiet(r.diet),
       hasHealthyVersion,
     });

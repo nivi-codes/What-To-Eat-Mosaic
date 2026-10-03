@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/preferences_provider.dart';
 import '../providers/meal_log_provider.dart';
+import '../providers/eat_flow_provider.dart';
 
 class MeScreen extends StatelessWidget {
   const MeScreen({super.key});
@@ -243,14 +244,22 @@ class _NudgeCard extends StatelessWidget {
                 Text(message, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.primary, fontSize: 14)),
                 const SizedBox(height: 6),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    final log = context.read<MealLogProvider>();
+                    context.read<EatFlowProvider>().startLightMeal(
+                          mealType: log.nextMeal,
+                          preferences: context.read<PreferencesProvider>().preferences,
+                          heavyMeals: log.heavyToday.map((l) => l.recipeTitle).toList(),
+                        );
+                    context.push('/eat/flow');
+                  },
                   style: TextButton.styleFrom(
                     padding: EdgeInsets.zero,
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     foregroundColor: AppColors.primary,
                   ),
-                  child: const Text('See lighter options →', style: TextStyle(fontSize: 12)),
+                  child: Text('Show light ${context.read<MealLogProvider>().nextMeal} picks →', style: const TextStyle(fontSize: 12)),
                 ),
               ],
             ),

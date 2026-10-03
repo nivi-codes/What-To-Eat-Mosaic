@@ -46,29 +46,46 @@ class IntentService {
   }
 }
 
-/// Debounced live intent extraction for one input field; drops stale responses
-/// so an older, slower reply never overwrites a newer one.
+/// Live intent extraction while the user speaks or types. Throttled, not
+/// debounced: speech updates arrive every ~450 ms, so a debounce would only fire
+/// once the user stopped talking. One request at a time, always for the newest
+/// text, which also keeps calls well under the provider's rate limit.
 class LiveIntent {
-  // Speech partials arrive every ~450ms while talking, so this only fires on
-  // pauses — keeps LLM calls well under the provider's rate limit.
-  LiveIntent(this.flowType, {this.delay = const Duration(milliseconds: 700)});
+  LiveIntent(this.flowType, {this.interval = const Duration(milliseconds: 900)});
 
   final String flowType;
-  final Duration delay;
+  final Duration interval;
   Timer? _timer;
-  int _seq = 0;
+  bool _inFlight = false;
+  String? _pending;
+  int _generation = 0;
+  void Function(Map<String, dynamic>? detected)? _onResult;
 
   void update(String text, void Function(Map<String, dynamic>? detected) onResult) {
-    _timer?.cancel();
-    final seq = ++_seq;
-    _timer = Timer(delay, () async {
-      final detected = await IntentService.extract(flowType, text);
-      if (seq == _seq) onResult(detected);
-    });
+    _pending = text;
+    _onResult = onResult;
+    if (_timer == null && !_inFlight) _timer = Timer(interval, _fire);
+  }
+
+  Future<void> _fire() async {
+    _timer = null;
+    final text = _pending;
+    if (text == null) return;
+    _pending = null;
+    _inFlight = true;
+    final generation = _generation;
+    final detected = await IntentService.extract(flowType, text);
+    _inFlight = false;
+    if (generation != _generation) return;
+    _onResult?.call(detected);
+    // Newer words arrived while this request was out: analyse them next.
+    if (_pending != null) _timer = Timer(interval, _fire);
   }
 
   void cancel() {
     _timer?.cancel();
-    _seq++;
+    _timer = null;
+    _pending = null;
+    _generation++;
   }
 }

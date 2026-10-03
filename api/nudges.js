@@ -2,6 +2,7 @@
 // Uses Sarvam LLM to generate contextual nudge questions for onboarding and eat flow.
 // Returns an array of short, conversational question strings.
 import { sarvamChat, extractJson, strList } from './_sarvam.js';
+import { dietClass, dietRule, violatesDiet } from './_diet.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -18,16 +19,21 @@ export default async function handler(req, res) {
     detected = {},             // what the user has already answered
     transcript = '',           // current transcript so far
     count = 5,                 // how many nudge questions to generate
+    dietaryType = null,        // the profile's diet (eat flow)
   } = req.body || {};
+  // Onboarding has no profile yet, so it goes by the diet the user has stated so far.
+  const dietSource = dietaryType || detected.dietary;
+  const diet = dietSource ? dietClass(dietSource) : null;
 
   try {
     const reply = await sarvamChat({
-      user: buildNudgePrompt(flowType, detected, transcript, count),
+      user: buildNudgePrompt(flowType, detected, transcript, count, diet),
       maxTokens: 300,
       temperature: 0.7,
       timeoutMs: 10000,
     });
-    const nudges = strList(extractJson(reply), count, 60);
+    // Backstop: the model sometimes still offers e.g. butter chicken to a vegetarian.
+    const nudges = strList(extractJson(reply), count, 60).filter((n) => !diet || !violatesDiet(n, diet));
     if (nudges.length > 0) return res.status(200).json({ nudges });
   } catch (err) {
     console.error('Sarvam nudge error:', err.message);
@@ -37,16 +43,17 @@ export default async function handler(req, res) {
   return res.status(200).json({ nudges: getDefaultNudges(flowType, detected) });
 }
 
-function buildNudgePrompt(flowType, detected, transcript, count) {
+function buildNudgePrompt(flowType, detected, transcript, count, diet) {
   const detectedKeys = Object.keys(detected);
   const detectedSummary = detectedKeys.length > 0
     ? detectedKeys.map(k => `${k}: ${Array.isArray(detected[k]) ? detected[k].join(', ') : detected[k]}`).join('; ')
     : 'nothing yet';
+  const dietLine = diet ? `\nDiet: ${dietRule(diet)} Never mention a dish or ingredient this rule forbids.` : '';
 
   if (flowType === 'onboarding') {
     return `You are a friendly Indian food assistant helping a user set up their food preferences.
 The user is speaking freely about their food habits. So far they've mentioned: ${detectedSummary}.
-${transcript ? `Their current words: "${transcript}"` : ''}
+${transcript ? `Their current words: "${transcript}"` : ''}${dietLine}
 
 Generate exactly ${count} short, friendly follow-up questions (max 6 words each) to learn what's STILL MISSING.
 We need to know: dietary type (veg/non-veg/vegan/eggetarian), favourite cuisines, preferred flavours, food allergies/avoidances, and healthy food preference.
@@ -59,7 +66,7 @@ Example: ["Spicy or mild?", "Any food allergies?"]`;
   // eat_flow
   return `You are a friendly Indian food assistant helping someone decide what to eat RIGHT NOW.
 They've mentioned: ${detectedSummary}.
-${transcript ? `Their words: "${transcript}"` : ''}
+${transcript ? `Their words: "${transcript}"` : ''}${dietLine}
 
 Generate exactly ${count} short, casual nudge questions (max 6 words each) to help narrow down their choice.
 We need: meal type (breakfast/lunch/snack/dinner), flavour preference, method (cook/order/dine out).

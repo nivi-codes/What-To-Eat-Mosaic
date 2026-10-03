@@ -15,6 +15,7 @@ class NudgeService {
     required Map<String, dynamic> detected,
     String transcript = '',
     int count = 5,
+    String? dietaryType,
   }) async {
     // 1. Try server endpoint (Vercel)
     try {
@@ -26,6 +27,7 @@ class NudgeService {
           'detected': detected,
           'transcript': transcript,
           'count': count,
+          'dietaryType': dietaryType,
         }),
       ).timeout(const Duration(seconds: 3));
 
@@ -125,6 +127,7 @@ class NudgeService {
     required void Function(List<String>) onResult,
     int count = 5,
     Duration delay = const Duration(milliseconds: 150),
+    String? dietaryType,
   }) {
     _debounce?.cancel();
     _debounce = Timer(delay, () async {
@@ -133,6 +136,7 @@ class NudgeService {
         detected: detected,
         transcript: transcript,
         count: count,
+        dietaryType: dietaryType,
       );
       onResult(nudges);
     });

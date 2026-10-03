@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/menu.dart';
 import '../models/recipe.dart';
+import '../models/suggestion.dart';
 import '../models/user_preferences.dart';
 
 /// On-the-fly LLM generation of recipes (/api/recipe) and restaurant menus (/api/menu).
@@ -15,6 +16,19 @@ class FoodAiService {
       ? {}
       : {'dietaryType': p.dietaryType, 'avoidances': p.avoidances};
 
+  // What the suggestion card already showed ("15 min · Veg · Indo-Chinese", kcal),
+  // so the generated recipe matches it.
+  static Map<String, dynamic>? _cardJson(Suggestion? s) {
+    if (s == null) return null;
+    final parts = s.subtitle.split('·').map((p) => p.trim()).toList();
+    return {
+      'minutes': int.tryParse(parts.first.split(' ').first),
+      'cuisine': parts.length >= 3 ? parts.last : null,
+      'calories': s.nutrition.calories,
+      if (s.hasHealthyVersion && s.healthyNutrition != null) 'healthyCalories': s.healthyNutrition!.calories,
+    };
+  }
+
   static Future<Recipe?> recipe({
     required String id,
     required String title,
@@ -24,6 +38,7 @@ class FoodAiService {
     List<String> flavours = const [],
     String? cookTime,
     UserPreferences? preferences,
+    Suggestion? card,
   }) {
     return _recipes[id] ??= _post('/api/recipe', {
       'id': id,
@@ -34,6 +49,7 @@ class FoodAiService {
       'flavours': flavours,
       'cookTime': cookTime,
       'preferences': _prefsJson(preferences),
+      'card': _cardJson(card),
     }, (j) => Recipe.fromJson(j)).then((r) {
       if (r == null) _recipes.remove(id); // allow retry
       return r;

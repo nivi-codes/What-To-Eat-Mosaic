@@ -45,7 +45,7 @@ export function isAllowed(label, cls) {
 // reject dishes whose name/ingredients name something the diet forbids.
 const MEAT_WORDS = /\b(chicken|mutton|lamb|goat|beef|pork|bacon|ham|fish|prawns?|shrimps?|crab|lobster|squid|seafood|keema|kheema|meat|tuna|salmon|duck|turkey)\b/i;
 const EGG_WORDS = /\b(eggs?|anda|omelett?e|bhurji)\b/i;
-const DAIRY_WORDS = /\b(paneer|ghee|butter|cream|creamy|malai|makhani|cheese|curd|dahi|yogh?urt|raita|lassi|milk|khoya|khoa|mawa|rabri|rabdi|kheer|kulfi|rasmalai|gulab jamun|shrikhand|honey|chhena|rasgulla|sandesh|barfi|burfi|peda|chai|latte|cappuccino)\b/i;
+const DAIRY_WORDS = /\b(paneer|ghee|butter|cream|creamy|malai|makhani|cheese|curd|dahi|yogh?urt|raita|lassi|milk|khoya|khoa|mawa|rabri|rabdi|kheer|kulfi|rasmalai|gulab jamun|shrikhand|honey|chhena|rasgulla|sandesh|barfi|burfi|peda|chai|latte|cappuccino|buttermilk|chaas|chaach|mor|kaapi|filter coffee|cold coffee|milkshake|jigarthanda|basundi|payasam|phirni|firni|falooda|thandai|kalakand|mysore pak)\b/i;
 const PLANT_BASED = /\b(coconut|almond|soy|soya|oat|cashew|peanut)\s+(milk|cream|butter|curd|yogh?urt|cheese)\b|\begg-?less\b|\begg-?free\b|\bno eggs?\b/gi;
 
 export function violatesDiet(text, cls) {
@@ -55,6 +55,14 @@ export function violatesDiet(text, cls) {
   if ((cls === 'vegetarian' || cls === 'vegan') && EGG_WORDS.test(t)) return true;
   if (cls === 'vegan' && DAIRY_WORDS.test(t)) return true;
   return false;
+}
+
+/** A dish's label, loosened until its own words fit it ("vegan" filter coffee -> vegetarian). */
+export function honestDiet(label, text) {
+  let i = DIETS.indexOf(dishDiet(label));
+  if (i < 0) return undefined;
+  while (i < DIETS.length - 1 && violatesDiet(text, DIETS[i])) i++;
+  return DIETS[i];
 }
 
 const RULES = {

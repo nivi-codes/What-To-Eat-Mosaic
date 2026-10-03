@@ -113,12 +113,15 @@ locally, or test against the deployed site.
 - **Sarvam model:** `sarvam-m` is deprecated; only `sarvam-105b` works. It reasons by
   default, so calls pass `reasoning_effort: null` to stay fast.
 - **Sarvam rate limits:** the key gets rate-limited after roughly 70 calls in a couple of
-  minutes. Live intent analysis therefore only runs when the user pauses.
+  minutes. Live intent analysis is therefore throttled to one call every 0.9 s while the
+  user speaks or types, and the two-pass extraction runs only when they submit.
 - **Gnani needs a proxy:** its WebSocket requires an `x-api-key-id` header, which browsers
   can't send, so the browser connects to `/api/stt-stream` and the function adds the header.
   Vercel WebSocket support is in public beta; sessions are capped at 5 minutes.
 - **Intent grounding:** the LLM must quote the user's words for each value it extracts,
   and the server drops values whose quote isn't in the input — this stops invented answers.
+  The model occasionally skips a meal the user named outright ("... for dinner"), so the
+  server fills that one in when exactly one meal word is present.
 - **No service worker:** an earlier build's service worker served stale files after
   redeploys. The app now registers none, and `build.sh` writes a cleanup worker that
   removes the old one from returning visitors' browsers.
